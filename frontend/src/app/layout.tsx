@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Digital Me",
-  description: "Create your AI digital twin through reflective conversation",
+  title: "Digital Me - 数字人格",
+  description: "通过反思性对话，用 AI 蒸馏你的数字人格",
 };
 
 export default function RootLayout({

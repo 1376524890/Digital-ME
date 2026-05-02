@@ -33,7 +33,7 @@ export default function MessageInput({ onSend, disabled }: Props) {
         value={text}
         onChange={(e) => setText(e.target.value)}
         disabled={disabled}
-        placeholder="Type your message..."
+        placeholder="输入你的消息..."
         className="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
       />
       <button
@@ -41,7 +41,7 @@ export default function MessageInput({ onSend, disabled }: Props) {
         disabled={disabled || !text.trim()}
         className="px-6 py-3 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        Send
+        发送
       </button>
     </form>
   );

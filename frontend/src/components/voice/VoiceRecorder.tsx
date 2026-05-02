@@ -71,7 +71,7 @@ export default function VoiceRecorder({ onTranscript, disabled }: Props) {
           ? "bg-red-500 text-white animate-pulse"
           : "bg-[var(--color-bg)] text-[var(--color-text)] hover:bg-[var(--color-border)]"
       } disabled:opacity-50`}
-      title={isListening ? "Stop recording" : "Start voice input"}
+      title={isListening ? "停止录音" : "语音输入"}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
