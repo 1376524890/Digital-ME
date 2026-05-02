@@ -1,10 +1,11 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-import ChatInterface from "@/components/chat/ChatInterface";
+import ChatInterface, { type CoverageData } from "@/components/chat/ChatInterface";
+import DimensionCoverage from "@/components/interview/DimensionCoverage";
 import { useInterview } from "@/hooks/useInterview";
 
 export default function InterviewPage() {
@@ -14,12 +15,12 @@ export default function InterviewPage() {
   const { sessionId, greeting, messages, isStarting, error, startInterview, resumeInterview } =
     useInterview();
   const [ready, setReady] = useState(false);
+  const [coverage, setCoverage] = useState<CoverageData | null>(null);
 
   useEffect(() => {
     if (ready) return;
 
     if (interviewId === "new") {
-      // Fresh interview — create session and get AI greeting
       startInterview().then((id) => {
         if (id) {
           router.replace(`/interview/${id}`);
@@ -27,12 +28,21 @@ export default function InterviewPage() {
         }
       });
     } else {
-      // Existing session — resume and get greeting if no messages yet
       resumeInterview(interviewId).then((data) => {
-        if (data) setReady(true);
+        if (data) {
+          setReady(true);
+          // Set initial coverage from resume data
+          if (data.coverage) {
+            setCoverage(data.coverage);
+          }
+        }
       });
     }
   }, [interviewId, ready, startInterview, resumeInterview, router]);
+
+  const handleCoverageUpdate = useCallback((cov: CoverageData) => {
+    setCoverage(cov);
+  }, []);
 
   if (!ready || isStarting) {
     return (
@@ -67,27 +77,36 @@ export default function InterviewPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      <header className="px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex items-center justify-between shrink-0">
+      <header className="px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex items-center justify-between shrink-0 gap-4">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors shrink-0"
         >
           <span>&larr;</span>
           <span>返回</span>
         </Link>
-        <h1 className="text-sm font-semibold">数字人格访谈</h1>
-        <Link
-          href={`/profile/${activeSessionId}`}
-          className="text-sm px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface)] hover:border-[#d0d0d0] transition-all"
-        >
-          查看画像
-        </Link>
+
+        {/* Progress bar in center */}
+        <div className="flex-1 flex justify-center">
+          <DimensionCoverage coverage={coverage} />
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <Link
+            href={`/profile/${activeSessionId}`}
+            className="text-sm px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface)] hover:border-[#d0d0d0] transition-all"
+          >
+            查看画像
+          </Link>
+        </div>
       </header>
       <main className="flex-1 overflow-hidden">
         <ChatInterface
           sessionId={activeSessionId}
           initialGreeting={greeting || undefined}
           initialMessages={messages.length > 0 ? messages : undefined}
+          initialCoverage={coverage}
+          onCoverageUpdate={handleCoverageUpdate}
         />
       </main>
     </div>

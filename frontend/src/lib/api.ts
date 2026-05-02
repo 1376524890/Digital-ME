@@ -24,6 +24,10 @@ export interface SendResponse {
   ply_id: string;
   response: string;
   sequence_num: number;
+  coverage?: CoverageResponse;
+  gaps?: Record<string, number>;
+  strategy?: string;
+  target_dimension?: string;
 }
 
 export interface CoverageResponse {
@@ -33,6 +37,7 @@ export interface CoverageResponse {
   perpetuating: number;
   protective: number;
   impact: number;
+  overall?: number;
 }
 
 export const api = {

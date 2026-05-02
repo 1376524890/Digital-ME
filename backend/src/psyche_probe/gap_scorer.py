@@ -1,13 +1,13 @@
 """Gap scoring across the 6 PPPPPI dimensions."""
 
-# Target evidence counts for each dimension
+# Target evidence counts for each dimension (achievable goals)
 TARGETS = {
-    "presenting": 5,
-    "predisposing": 4,
-    "precipitating": 3,
-    "perpetuating": 4,
-    "protective": 3,
-    "impact": 3,
+    "presenting": 3,
+    "predisposing": 3,
+    "precipitating": 2,
+    "perpetuating": 3,
+    "protective": 2,
+    "impact": 2,
 }
 
 DIMENSION_LABELS = {

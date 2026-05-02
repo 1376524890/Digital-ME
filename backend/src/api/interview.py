@@ -141,12 +141,23 @@ async def get_session_state(
                 "sequence_num": p.sequence_num,
             })
 
+    # Get coverage from profile snapshot
+    profile = await _ensure_profile(db, session_id)
+    from src.psyche_probe.gap_scorer import TARGETS
+    coverage = {}
+    for dim, target in TARGETS.items():
+        slot = profile.pppppi_slots.get(dim, {})
+        evidence_count = len(slot.get("evidence", []))
+        coverage[dim] = round(min(evidence_count / target, 1.0), 2)
+    coverage["overall"] = round(sum(coverage.values()) / len(TARGETS), 2) if coverage else 0.0
+
     return {
         "session_id": str(session.id),
         "status": session.status,
         "message_count": len(plys),
         "greeting": greeting,
         "messages": messages,
+        "coverage": coverage,
     }
 
 
@@ -262,6 +273,15 @@ async def send_message(
     db.add(ply)
     await db.commit()
 
+    # Compute coverage for progress display
+    from src.psyche_probe.gap_scorer import TARGETS as GAP_TARGETS
+    coverage = {}
+    for dim, target in GAP_TARGETS.items():
+        slot = profile.pppppi_slots.get(dim, {})
+        evidence_count = len(slot.get("evidence", []))
+        coverage[dim] = round(min(evidence_count / target, 1.0), 2)
+    coverage["overall"] = round(sum(coverage.values()) / len(GAP_TARGETS), 2) if coverage else 0.0
+
     # ── Memory Distillation (async, non-blocking to response) ──
     result = {
         "ply_id": str(ply.id),
@@ -270,6 +290,7 @@ async def send_message(
         "gaps": gaps,
         "strategy": plan.get("strategy"),
         "target_dimension": plan.get("target_dimension"),
+        "coverage": coverage,
     }
 
     # Fire-and-forget distillation

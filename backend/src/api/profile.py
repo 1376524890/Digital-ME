@@ -54,19 +54,22 @@ async def get_coverage(session_id: uuid.UUID, db: AsyncSession = Depends(get_db)
         return default_coverage
 
     targets = {
-        "presenting": 5,
-        "predisposing": 4,
-        "precipitating": 3,
-        "perpetuating": 4,
-        "protective": 3,
-        "impact": 3,
+        "presenting": 3,
+        "predisposing": 3,
+        "precipitating": 2,
+        "perpetuating": 3,
+        "protective": 2,
+        "impact": 2,
     }
 
     coverage = {}
+    overall = 0.0
     for dim, target in targets.items():
         slot = profile.pppppi_slots.get(dim, {})
         evidence_count = len(slot.get("evidence", []))
-        confidence = slot.get("confidence", 0.0)
-        coverage[dim] = min(evidence_count / target * confidence, 1.0)
+        # Progress = evidence ratio (confidence affects gap scoring, not visual progress)
+        coverage[dim] = round(min(evidence_count / target, 1.0), 2)
+        overall += coverage[dim]
+    coverage["overall"] = round(overall / len(targets), 2)
 
     return coverage
