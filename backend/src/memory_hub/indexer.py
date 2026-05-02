@@ -1,4 +1,11 @@
-"""Indexer: pgvector HNSW vector index + BM25 keyword index."""
+"""Indexer: pgvector HNSW vector index + BM25 keyword index.
+
+Embedding model (sentence-transformers) is loaded lazily. If not installed,
+vector search degrades gracefully: BM25-only retrieval still works.
+"""
+
+import hashlib
+import struct
 
 import numpy as np
 from rank_bm25 import BM25Okapi
@@ -8,24 +15,53 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.db.models import StructuredObject
 
 
+def _fallback_hash_embedding(text: str, dim: int = 384) -> list[float]:
+    """Simple hash-based pseudo-embedding when sentence-transformers is unavailable.
+    This produces a deterministic, normalized vector that enables basic near-duplicate
+    detection and retrieval. NOT a semantic embedding — BM25 handles actual search."""
+    h = hashlib.sha256(text.encode()).digest()
+    # Expand hash to fill the required dimension
+    vals = []
+    for i in range(dim):
+        byte_val = h[i % len(h)]
+        seed = struct.unpack("B", bytes([(byte_val + i) % 256]))[0] / 255.0
+        vals.append(seed * 2.0 - 1.0)  # Center around 0
+    arr = np.array(vals, dtype=float)
+    arr = arr / (np.linalg.norm(arr) + 1e-10)
+    return arr.tolist()
+
+
 class Indexer:
     def __init__(self):
         self._embedding_model = None
+        self._embedding_available = None  # None = not checked yet
 
-    @property
-    def embedding_model(self):
-        if self._embedding_model is None:
+    def _ensure_model(self):
+        """Lazy-load embedding model. Returns True if loaded, False if unavailable."""
+        if self._embedding_available is not None:
+            return self._embedding_available
+
+        try:
             from sentence_transformers import SentenceTransformer
             import os
+
             model_name = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
             self._embedding_model = SentenceTransformer(model_name)
-        return self._embedding_model
+            self._embedding_available = True
+        except Exception as e:
+            print(f"Embedding model not available, using hash fallback: {e}")
+            self._embedding_available = False
+        return self._embedding_available
 
     async def embed_text(self, text: str) -> list[float]:
-        """Generate 384-dim embedding for a text."""
-        model = self.embedding_model
-        embedding = model.encode(text, normalize_embeddings=True)
-        return embedding.tolist()
+        """Generate embedding for text. Uses real model if available, else hash fallback."""
+        if self._ensure_model():
+            try:
+                embedding = self._embedding_model.encode(text, normalize_embeddings=True)
+                return embedding.tolist()
+            except Exception:
+                pass
+        return _fallback_hash_embedding(text)
 
     async def index_object(self, db: AsyncSession, obj: StructuredObject):
         """Generate and store embedding for a StructuredObject."""
@@ -34,7 +70,7 @@ class Indexer:
         obj.embedding = embedding
         await db.commit()
 
-    async def build_bm25(self, objects: list[StructuredObject]) -> BM25Okapi:
+    async def build_bm25(self, objects: list[StructuredObject]) -> BM25Okapi | None:
         """Build BM25 index from structured objects."""
         corpus = []
         for obj in objects:

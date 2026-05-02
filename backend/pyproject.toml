@@ -16,6 +16,8 @@ dependencies = [
     "sentence-transformers>=3.0.0",
     "rank-bm25>=0.2.2",
     "pgvector>=0.4.0",
+    "pyyaml>=6.0",
+    "numpy>=1.26",
 ]
 
 [tool.uvicorn]
