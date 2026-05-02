@@ -2,25 +2,196 @@
 
 @layer base {
   :root {
-    --color-bg: #f8fafc;
-    --color-surface: #ffffff;
-    --color-text: #0f172a;
-    --color-text-muted: #64748b;
-    --color-border: #e2e8f0;
-    --color-accent: #3b82f6;
+    --color-bg: #ffffff;
+    --color-surface: #fafafa;
+    --color-text: #111111;
+    --color-text-muted: #6b6b6b;
+    --color-border: #e5e5e5;
+    --color-accent: #111111;
   }
 
   .dark {
-    --color-bg: #0f172a;
-    --color-surface: #1e293b;
-    --color-text: #f1f5f9;
-    --color-text-muted: #94a3b8;
-    --color-border: #334155;
-    --color-accent: #60a5fa;
+    --color-bg: #0a0a0a;
+    --color-surface: #141414;
+    --color-text: #f0f0f0;
+    --color-text-muted: #888888;
+    --color-border: #2a2a2a;
+    --color-accent: #f0f0f0;
   }
 }
 
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
+}
+
+/* ===== Flowing Numbers Animation ===== */
+@keyframes digit-fall {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.15;
+  }
+  90% {
+    opacity: 0.15;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+@keyframes digit-fade-in-out {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.12; }
+}
+
+@keyframes matrix-rain {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.digit-stream {
+  position: fixed;
+  top: 0;
+  pointer-events: none;
+  z-index: 0;
+  font-family: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text);
+  opacity: 0.06;
+  writing-mode: vertical-rl;
+  animation: matrix-rain linear infinite;
+}
+
+/* ===== Glow Pulse ===== */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.1); }
+  50% { box-shadow: 0 0 20px 4px rgba(0, 0, 0, 0.06); }
+}
+
+/* ===== Subtle border shimmer ===== */
+@keyframes border-shimmer {
+  0% { border-color: var(--color-border); }
+  50% { border-color: #d0d0d0; }
+  100% { border-color: var(--color-border); }
+}
+
+/* ===== Fade in up ===== */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out both;
+}
+
+/* ===== Markdown content styling ===== */
+.prose-skill {
+  color: var(--color-text);
+  line-height: 1.8;
+}
+
+.prose-skill h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.prose-skill h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-skill h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-skill p {
+  margin-bottom: 0.75rem;
+}
+
+.prose-skill ul, .prose-skill ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-skill li {
+  margin-bottom: 0.25rem;
+}
+
+.prose-skill code {
+  background: var(--color-surface);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  border: 1px solid var(--color-border);
+}
+
+.prose-skill pre {
+  background: var(--color-surface);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+}
+
+.prose-skill pre code {
+  background: none;
+  padding: 0;
+  border: none;
+}
+
+.prose-skill blockquote {
+  border-left: 3px solid var(--color-text);
+  padding-left: 1rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.prose-skill strong {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.prose-skill hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1.5rem 0;
+}
+
+.prose-skill table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.prose-skill th, .prose-skill td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.prose-skill th {
+  background: var(--color-surface);
+  font-weight: 600;
 }

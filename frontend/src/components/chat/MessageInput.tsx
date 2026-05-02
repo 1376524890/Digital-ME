@@ -25,7 +25,7 @@ export default function MessageInput({ onSend, disabled }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex gap-2 p-4 border-t border-[var(--color-border)] bg-[var(--color-surface)] items-center"
+      className="flex gap-2 py-3 items-center"
     >
       <VoiceRecorder onTranscript={handleTranscript} disabled={disabled} />
       <input
@@ -34,12 +34,12 @@ export default function MessageInput({ onSend, disabled }: Props) {
         onChange={(e) => setText(e.target.value)}
         disabled={disabled}
         placeholder="输入你的消息..."
-        className="flex-1 px-4 py-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-primary-600 disabled:opacity-50"
+        className="flex-1 px-4 py-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[#b0b0b0] transition-colors disabled:opacity-50"
       />
       <button
         type="submit"
         disabled={disabled || !text.trim()}
-        className="px-6 py-3 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="px-5 py-2.5 rounded-xl bg-black text-white text-sm font-medium hover:bg-[#1a1a1a] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
       >
         发送
       </button>

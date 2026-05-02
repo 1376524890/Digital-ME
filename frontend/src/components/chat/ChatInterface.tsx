@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { streamChat } from "@/lib/sse";
-import { api } from "@/lib/api";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
 
@@ -27,9 +26,9 @@ export default function ChatInterface({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Set initial greeting
   useEffect(() => {
     if (initialGreeting) {
       setMessages([
@@ -38,9 +37,11 @@ export default function ChatInterface({
     }
   }, [initialGreeting]);
 
-  // Auto-scroll
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop =
+        scrollContainerRef.current.scrollHeight;
+    }
   }, [messages, streamingContent]);
 
   const handleSend = useCallback(
@@ -82,8 +83,16 @@ export default function ChatInterface({
   );
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+    <div className="h-full flex flex-col max-w-3xl mx-auto">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-6 py-4 space-y-4 scroll-smooth"
+      >
+        {messages.length === 0 && !isStreaming && (
+          <div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-sm">
+            <p>等待访谈开始...</p>
+          </div>
+        )}
         {messages.map((msg) => (
           <MessageBubble key={msg.id} role={msg.role} content={msg.content} />
         ))}
@@ -96,7 +105,11 @@ export default function ChatInterface({
         )}
         <div ref={messagesEndRef} />
       </div>
-      <MessageInput onSend={handleSend} disabled={isStreaming} />
+      <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="max-w-3xl mx-auto">
+          <MessageInput onSend={handleSend} disabled={isStreaming} />
+        </div>
+      </div>
     </div>
   );
 }

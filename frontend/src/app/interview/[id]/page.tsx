@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import ChatInterface from "@/components/chat/ChatInterface";
 import { useInterview } from "@/hooks/useInterview";
@@ -27,10 +28,10 @@ export default function InterviewPage() {
 
   if (interviewId === "new" || isStarting) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-[var(--color-text-muted)]">正在准备访谈...</p>
+          <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-[var(--color-text-muted)] text-sm">正在准备访谈...</p>
         </div>
       </div>
     );
@@ -38,12 +39,12 @@ export default function InterviewPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
-          <p className="text-red-500">启动失败：{error}</p>
+          <p className="text-red-500 text-sm">启动失败：{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="text-primary-600 hover:underline"
+            className="text-sm px-4 py-2 rounded-lg bg-black text-white hover:bg-[#1a1a1a] transition-colors"
           >
             重试
           </button>
@@ -53,17 +54,24 @@ export default function InterviewPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex items-center justify-between">
-        <h1 className="text-lg font-semibold">数字人格访谈</h1>
-        <button
-          onClick={() => router.push(`/profile/${sessionId || interviewId}`)}
-          className="text-sm text-primary-600 hover:underline"
+    <div className="h-screen flex flex-col overflow-hidden">
+      <header className="px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex items-center justify-between shrink-0">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+        >
+          <span>&larr;</span>
+          <span>返回</span>
+        </Link>
+        <h1 className="text-sm font-semibold">数字人格访谈</h1>
+        <Link
+          href={`/profile/${sessionId || interviewId}`}
+          className="text-sm px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface)] hover:border-[#d0d0d0] transition-all"
         >
           查看画像
-        </button>
+        </Link>
       </header>
-      <main className="flex-1 max-w-4xl w-full mx-auto">
+      <main className="flex-1 overflow-hidden">
         <ChatInterface
           sessionId={sessionId || interviewId}
           initialGreeting={greeting || undefined}

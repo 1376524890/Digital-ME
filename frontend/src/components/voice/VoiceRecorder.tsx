@@ -66,10 +66,10 @@ export default function VoiceRecorder({ onTranscript, disabled }: Props) {
       type="button"
       onClick={isListening ? stopListening : startListening}
       disabled={disabled}
-      className={`p-3 rounded-lg transition-colors ${
+      className={`p-2.5 rounded-xl transition-all ${
         isListening
-          ? "bg-red-500 text-white animate-pulse"
-          : "bg-[var(--color-bg)] text-[var(--color-text)] hover:bg-[var(--color-border)]"
+          ? "bg-black text-white scale-105"
+          : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg)]"
       } disabled:opacity-50`}
       title={isListening ? "停止录音" : "语音输入"}
     >
