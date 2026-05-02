@@ -7,8 +7,9 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **AI-driven digital twin distillation through reflective conversation.**
-
 Digital Me is a web application that uses multi-agent psychological profiling to create a digital twin of your personality. Through natural conversation, the system extracts your cognitive patterns, communication style, values, and preferences, then generates a mountable `SKILL.md` file that enables AI assistants to think, speak, and respond like you.
+
+[中文文档](README_CN.md)
 
 ## How It Works
 
