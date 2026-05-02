@@ -11,7 +11,7 @@ export default function InterviewPage() {
   const params = useParams();
   const router = useRouter();
   const interviewId = params.id as string;
-  const { sessionId, greeting, isStarting, error, startInterview, resumeInterview } =
+  const { sessionId, greeting, messages, isStarting, error, startInterview, resumeInterview } =
     useInterview();
   const [ready, setReady] = useState(false);
 
@@ -87,6 +87,7 @@ export default function InterviewPage() {
         <ChatInterface
           sessionId={activeSessionId}
           initialGreeting={greeting || undefined}
+          initialMessages={messages.length > 0 ? messages : undefined}
         />
       </main>
     </div>

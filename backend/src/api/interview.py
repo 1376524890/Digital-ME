@@ -111,6 +111,7 @@ async def get_session_state(
 
     # If no messages yet, generate a fresh greeting
     greeting = None
+    messages = []
     if not plys:
         llm = get_llm()
         greeting = await llm.generate(
@@ -124,12 +125,28 @@ async def get_session_state(
             temperature=0.8,
             max_tokens=200,
         )
+    else:
+        # Return all messages so frontend can restore chat history
+        for p in plys:
+            messages.append({
+                "id": str(p.id),
+                "role": "user",
+                "content": p.user_text,
+                "sequence_num": p.sequence_num,
+            })
+            messages.append({
+                "id": str(p.id) + "_ai",
+                "role": "assistant",
+                "content": p.ai_response,
+                "sequence_num": p.sequence_num,
+            })
 
     return {
         "session_id": str(session.id),
         "status": session.status,
         "message_count": len(plys),
         "greeting": greeting,
+        "messages": messages,
     }
 
 

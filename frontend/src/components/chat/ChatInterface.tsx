@@ -15,12 +15,14 @@ interface Message {
 interface Props {
   sessionId: string;
   initialGreeting?: string;
+  initialMessages?: Message[];
   onComplete?: () => void;
 }
 
 export default function ChatInterface({
   sessionId,
   initialGreeting,
+  initialMessages,
   onComplete,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -28,14 +30,22 @@ export default function ChatInterface({
   const [streamingContent, setStreamingContent] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const historyLoaded = useRef(false);
 
+  // Load initial greeting (new session) or history (existing session)
   useEffect(() => {
-    if (initialGreeting) {
+    if (historyLoaded.current) return;
+
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages(initialMessages);
+      historyLoaded.current = true;
+    } else if (initialGreeting) {
       setMessages([
         { id: "greeting", role: "assistant", content: initialGreeting },
       ]);
+      historyLoaded.current = true;
     }
-  }, [initialGreeting]);
+  }, [initialGreeting, initialMessages]);
 
   useEffect(() => {
     if (scrollContainerRef.current) {
