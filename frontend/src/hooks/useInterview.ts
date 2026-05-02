@@ -35,7 +35,32 @@ export function useInterview() {
       setState((s) => ({
         ...s,
         isStarting: false,
-        error: err instanceof Error ? err.message : "Failed to start",
+        error: err instanceof Error ? err.message : "启动失败",
+      }));
+      return null;
+    }
+  }, []);
+
+  const resumeInterview = useCallback(async (sessionId: string) => {
+    setState((s) => ({ ...s, isStarting: true, error: null }));
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/interview/${sessionId}/state`
+      );
+      if (!res.ok) throw new Error("会话不存在");
+      const data = await res.json();
+      setState({
+        sessionId: data.session_id,
+        greeting: data.greeting, // null if session already has messages
+        isStarting: false,
+        error: null,
+      });
+      return data;
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        isStarting: false,
+        error: err instanceof Error ? err.message : "加载失败",
       }));
       return null;
     }
@@ -46,5 +71,5 @@ export function useInterview() {
     await api.endInterview(state.sessionId);
   }, [state.sessionId]);
 
-  return { ...state, startInterview, endInterview };
+  return { ...state, startInterview, resumeInterview, endInterview };
 }

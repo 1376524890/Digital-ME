@@ -91,6 +91,48 @@ async def _ensure_profile(db: AsyncSession, session_id: uuid.UUID) -> ProfileSna
     return profile
 
 
+@router.get("/{session_id}/state")
+async def get_session_state(
+    session_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Get session state including whether AI should initiate conversation."""
+    session = await db.get(Session, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Check if session has any messages
+    result = await db.execute(
+        select(Ply)
+        .where(Ply.session_id == session_id)
+        .order_by(Ply.sequence_num.asc())
+    )
+    plys = list(result.scalars().all())
+
+    # If no messages yet, generate a fresh greeting
+    greeting = None
+    if not plys:
+        llm = get_llm()
+        greeting = await llm.generate(
+            system_prompt=WELCOME_SYSTEM,
+            messages=[
+                {
+                    "role": "user",
+                    "content": "发起对话。做个简短的自我介绍，然后提一个开放式问题来了解我。",
+                }
+            ],
+            temperature=0.8,
+            max_tokens=200,
+        )
+
+    return {
+        "session_id": str(session.id),
+        "status": session.status,
+        "message_count": len(plys),
+        "greeting": greeting,
+    }
+
+
 @router.post("/start", response_model=StartResponse)
 async def start_interview(body: StartRequest, db: AsyncSession = Depends(get_db)):
     session = Session(user_id=body.user_id, status="active", metadata_={})
