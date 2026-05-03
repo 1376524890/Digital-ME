@@ -1,5 +1,7 @@
 "use client";
 
+import type { CoverageData } from "@/components/chat/ChatInterface";
+
 const DIM_LABELS: Record<string, string> = {
   presenting: "核心诉求",
   predisposing: "易感因素",
@@ -10,7 +12,7 @@ const DIM_LABELS: Record<string, string> = {
 };
 
 interface Props {
-  coverage: Record<string, number> | null | undefined;
+  coverage: CoverageData | null | undefined;
 }
 
 export default function DimensionCoverage({ coverage }: Props) {

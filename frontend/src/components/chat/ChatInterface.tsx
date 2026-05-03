@@ -21,6 +21,7 @@ export interface CoverageData {
   protective: number;
   impact: number;
   overall: number;
+  [key: string]: number;
 }
 
 interface Props {

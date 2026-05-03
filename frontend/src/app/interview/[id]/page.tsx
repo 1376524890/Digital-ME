@@ -12,10 +12,12 @@ export default function InterviewPage() {
   const params = useParams();
   const router = useRouter();
   const interviewId = params.id as string;
-  const { sessionId, greeting, messages, isStarting, error, startInterview, resumeInterview } =
+  const { sessionId, greeting, messages, isStarting, error, startInterview, resumeInterview, endInterview } =
     useInterview();
   const [ready, setReady] = useState(false);
   const [coverage, setCoverage] = useState<CoverageData | null>(null);
+  const [showConfirmRestart, setShowConfirmRestart] = useState(false);
+  const [restarting, setRestarting] = useState(false);
 
   useEffect(() => {
     if (ready) return;
@@ -43,6 +45,20 @@ export default function InterviewPage() {
   const handleCoverageUpdate = useCallback((cov: CoverageData) => {
     setCoverage(cov);
   }, []);
+
+  const handleRestart = useCallback(async () => {
+    setRestarting(true);
+    try {
+      await endInterview();
+    } catch (_) {
+      // Proceed even if the backend call fails
+    }
+    setShowConfirmRestart(false);
+    setRestarting(false);
+    setReady(false);
+    setCoverage(null);
+    router.push("/interview/new");
+  }, [endInterview, router]);
 
   if (!ready || isStarting) {
     return (
@@ -92,12 +108,42 @@ export default function InterviewPage() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <Link
-            href={`/profile/${activeSessionId}`}
-            className="text-sm px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface)] hover:border-[#d0d0d0] transition-all"
-          >
-            查看画像
-          </Link>
+          {showConfirmRestart ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--color-text-muted)]">
+                确定要重新开始吗？当前进度会丢失。
+              </span>
+              <button
+                onClick={handleRestart}
+                disabled={restarting}
+                className="text-xs px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {restarting ? "处理中..." : "确认"}
+              </button>
+              <button
+                onClick={() => setShowConfirmRestart(false)}
+                disabled={restarting}
+                className="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface)] disabled:opacity-50 transition-all"
+              >
+                取消
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link
+                href={`/profile/${activeSessionId}`}
+                className="text-sm px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface)] hover:border-[#d0d0d0] transition-all"
+              >
+                查看画像
+              </Link>
+              <button
+                onClick={() => setShowConfirmRestart(true)}
+                className="text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-all"
+              >
+                重新开始
+              </button>
+            </>
+          )}
         </div>
       </header>
       <main className="flex-1 overflow-hidden">
