@@ -1,3 +1,5 @@
+import type { ProfileSnapshot } from "@shared/types/index";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 async function request<T>(
@@ -40,6 +42,22 @@ export interface CoverageResponse {
   overall?: number;
 }
 
+export interface InterviewStateMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  sequence_num: number;
+}
+
+export interface InterviewStateResponse {
+  session_id: string;
+  status: "active" | "completed";
+  message_count: number;
+  greeting: string | null;
+  messages: InterviewStateMessage[];
+  coverage: CoverageResponse;
+}
+
 export const api = {
   startInterview: (userId: string, context?: string) =>
     request<StartResponse>("/interview/start", {
@@ -59,12 +77,28 @@ export const api = {
       { method: "POST" }
     ),
 
+  abandonInterview: (sessionId: string) =>
+    request<{ session_id: string; status: string }>(
+      `/interview/${sessionId}/abandon`,
+      { method: "POST" }
+    ),
+
+  getInterviewState: (sessionId: string) =>
+    request<InterviewStateResponse>(`/interview/${sessionId}/state`),
+
   getCoverage: (sessionId: string) =>
     request<CoverageResponse>(`/profile/${sessionId}/coverage`),
 
   getProfile: (sessionId: string) =>
-    request<any>(`/profile/${sessionId}`),
+    request<ProfileSnapshot>(`/profile/${sessionId}`),
 
-  getSkillMd: (sessionId: string) =>
-    fetch(`${API_BASE}/export/${sessionId}/skill.md`).then((r) => r.text()),
+  getSkillMd: async (sessionId: string) => {
+    const res = await fetch(`${API_BASE}/export/${sessionId}/skill.md`);
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`API error ${res.status}: ${body}`);
+    }
+    return res.text();
+  },
 };

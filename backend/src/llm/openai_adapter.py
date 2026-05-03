@@ -1,5 +1,8 @@
 import json
 from collections.abc import AsyncIterator
+from typing import TypeVar, get_origin
+
+T = TypeVar("T")
 
 from openai import AsyncOpenAI
 from pydantic import BaseModel
@@ -16,6 +19,17 @@ class OpenAIAdapter(BaseLLM):
         self, system_prompt: str, messages: list[dict]
     ) -> list[dict]:
         return [{"role": "system", "content": system_prompt}, *messages]
+
+    def _parse_json_content(self, content: str):
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            import re
+
+            match = re.search(r"\{.*\}|\[.*\]", content, re.DOTALL)
+            if not match:
+                raise
+            return json.loads(match.group())
 
     async def generate(
         self,
@@ -51,7 +65,7 @@ class OpenAIAdapter(BaseLLM):
             if delta and delta.content:
                 yield delta.content
 
-    async def generate_structured[T](
+    async def generate_structured(
         self,
         system_prompt: str,
         messages: list[dict],
@@ -75,22 +89,41 @@ class OpenAIAdapter(BaseLLM):
             except Exception:
                 pass  # Fall through to JSON mode
 
-        # JSON mode fallback for dict, list, or if instructor fails
+        origin = get_origin(output_schema)
+        expects_dict = output_schema is dict or origin is dict
+        expects_list = output_schema is list or origin is list
+
+        # JSON mode fallback for dict/list schemas or if instructor fails
         json_system = system_prompt + "\n\nRespond ONLY with valid JSON. No other text."
+        request_kwargs = {
+            "model": self.model,
+            "messages": self._build_messages(json_system, messages),
+            "temperature": temperature,
+            "max_tokens": 2048,
+        }
+        if expects_dict:
+            request_kwargs["response_format"] = {"type": "json_object"}
+
         response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=self._build_messages(json_system, messages),
-            temperature=temperature,
-            max_tokens=2048,
-            response_format={"type": "json_object"},
+            **request_kwargs,
         )
-        content = response.choices[0].message.content or "{}"
+        content = response.choices[0].message.content or ("[]" if expects_list else "{}")
         try:
-            return json.loads(content)
+            parsed = self._parse_json_content(content)
         except json.JSONDecodeError:
-            # Try to extract JSON from the response
-            import re
-            match = re.search(r"\{.*\}|\[.*\]", content, re.DOTALL)
-            if match:
-                return json.loads(match.group())
-            return {} if output_schema is dict else []
+            return {} if expects_dict else []
+
+        if expects_list:
+            if isinstance(parsed, list):
+                return parsed
+            if isinstance(parsed, dict):
+                for key in ["items", "results", "data"]:
+                    value = parsed.get(key)
+                    if isinstance(value, list):
+                        return value
+            return []
+
+        if expects_dict and isinstance(parsed, dict):
+            return parsed
+
+        return parsed

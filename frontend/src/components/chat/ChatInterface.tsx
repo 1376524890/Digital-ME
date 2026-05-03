@@ -30,7 +30,9 @@ interface Props {
   initialMessages?: Message[];
   initialCoverage?: CoverageData | null;
   onCoverageUpdate?: (coverage: CoverageData) => void;
+  onStreamingChange?: (isStreaming: boolean) => void;
   onComplete?: () => void;
+  disabled?: boolean;
 }
 
 export default function ChatInterface({
@@ -39,14 +41,38 @@ export default function ChatInterface({
   initialMessages,
   initialCoverage,
   onCoverageUpdate,
+  onStreamingChange,
   onComplete,
+  disabled,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [streamError, setStreamError] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const historyLoaded = useRef(false);
+
+  const applySessionState = useCallback(
+    async (stateSessionId: string) => {
+      const data = await api.getInterviewState(stateSessionId);
+      const restoredMessages =
+        data.messages.length > 0
+          ? data.messages.map((message) => ({
+              id: message.id,
+              role: message.role,
+              content: message.content,
+            }))
+          : data.greeting
+            ? [{ id: "greeting", role: "assistant" as const, content: data.greeting }]
+            : [];
+      setMessages(restoredMessages);
+      if (data.coverage && onCoverageUpdate) {
+        onCoverageUpdate({ ...data.coverage, overall: data.coverage.overall ?? 0 });
+      }
+    },
+    [onCoverageUpdate]
+  );
 
   // Load initial greeting (new session) or history (existing session)
   useEffect(() => {
@@ -68,7 +94,11 @@ export default function ChatInterface({
     if (initialCoverage && onCoverageUpdate) {
       onCoverageUpdate(initialCoverage);
     }
-  }, [initialCoverage]);
+  }, [initialCoverage, onCoverageUpdate]);
+
+  useEffect(() => {
+    onStreamingChange?.(isStreaming);
+  }, [isStreaming, onStreamingChange]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -80,6 +110,7 @@ export default function ChatInterface({
 
   const handleSend = useCallback(
     async (text: string) => {
+      setStreamError(null);
       const userMsg: Message = {
         id: crypto.randomUUID(),
         role: "user",
@@ -90,7 +121,6 @@ export default function ChatInterface({
       setStreamingContent("");
 
       let fullContent = "";
-      let finalCoverage: CoverageData | null = null;
       try {
         for await (const event of streamChat(sessionId, text)) {
           if (event.type === "token" && event.content) {
@@ -105,36 +135,24 @@ export default function ChatInterface({
                 content: fullContent,
               },
             ]);
+            if (event.coverage && onCoverageUpdate) {
+              onCoverageUpdate(event.coverage);
+            }
             setStreamingContent("");
-            // Coverage comes from the non-streaming endpoint, so poll it
           }
         }
       } catch (err) {
         console.error("Stream error:", err);
-        // Fallback: use non-streaming endpoint
         try {
-          const res = await api.sendMessage(sessionId, text);
-          if (res) {
-            setMessages((prev) => [
-              ...prev,
-              { id: res.ply_id, role: "assistant", content: res.response },
-            ]);
-            if (res.coverage) finalCoverage = res.coverage as CoverageData;
-          }
-        } catch (_) {}
+          await applySessionState(sessionId);
+        } catch {
+          setStreamError("这条消息同步失败，请重试。");
+        }
       } finally {
         setIsStreaming(false);
       }
-
-      // Fetch coverage after message
-      try {
-        const cov = await api.getCoverage(sessionId);
-        if (cov && onCoverageUpdate) {
-          onCoverageUpdate({ ...cov, overall: cov.overall ?? 0 });
-        }
-      } catch (_) {}
     },
-    [sessionId, onCoverageUpdate]
+    [applySessionState, onCoverageUpdate, sessionId]
   );
 
   return (
@@ -146,6 +164,11 @@ export default function ChatInterface({
         {messages.length === 0 && !isStreaming && (
           <div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-sm">
             <p>AI 正在准备...</p>
+          </div>
+        )}
+        {streamError && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {streamError}
           </div>
         )}
         {messages.map((msg) => (
@@ -162,7 +185,7 @@ export default function ChatInterface({
       </div>
       <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="max-w-3xl mx-auto">
-          <MessageInput onSend={handleSend} disabled={isStreaming} />
+          <MessageInput onSend={handleSend} disabled={isStreaming || disabled} />
         </div>
       </div>
     </div>

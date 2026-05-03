@@ -32,11 +32,15 @@ class SkillBuilder:
             objects = []
 
         # 2. Estimate OCEAN scores
-        try:
-            ocean = await self.yaml_composer.estimate_ocean(profile)
-        except Exception as e:
-            print(f"OCEAN estimation failed: {e}")
-            ocean = {"o": 0.5, "c": 0.5, "e": 0.5, "a": 0.5, "n": 0.5}
+        existing_ocean = profile.get("ocean_scores", {})
+        if existing_ocean:
+            ocean = existing_ocean
+        else:
+            try:
+                ocean = await self.yaml_composer.estimate_ocean(profile)
+            except Exception as e:
+                print(f"OCEAN estimation failed: {e}")
+                ocean = {"o": 0.5, "c": 0.5, "e": 0.5, "a": 0.5, "n": 0.5}
 
         # 3. Compose YAML frontmatter
         yaml_fm = self.yaml_composer.compose(profile, ocean)

@@ -1,5 +1,6 @@
-"""Psychological state builder: extracts cognitive errors, PPPPPI slots, and BDI model."""
+"""Psychological state builder: extracts profile signals from user messages."""
 
+import asyncio
 import json
 import re
 from datetime import datetime, timezone
@@ -11,6 +12,10 @@ from src.psyche_probe.prompts.cognitive_errors import (
 )
 from src.psyche_probe.prompts.pppppi import PPPPPI_SYSTEM, PPPPPI_USER_TEMPLATE
 from src.psyche_probe.prompts.bdi import BDI_SYSTEM, BDI_USER_TEMPLATE
+from src.psyche_probe.prompts.communication import (
+    COMMUNICATION_SYSTEM,
+    COMMUNICATION_USER_TEMPLATE,
+)
 
 
 class StateBuilder:
@@ -151,22 +156,114 @@ class StateBuilder:
                     merged[category].append(item)
         return merged
 
+    # ── Communication Extraction ──
+
+    async def update_communication(
+        self,
+        text: str,
+        current_vocabulary: dict,
+        current_syntax: list[str],
+        current_taboos: list[str],
+    ) -> dict:
+        """Extract vocabulary, syntax, and taboo preferences from user text."""
+        current_profile = json.dumps(
+            {
+                "vocabulary_profile": current_vocabulary or {},
+                "syntax_preferences": current_syntax or [],
+                "key_taboos": current_taboos or [],
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+        messages = [
+            {
+                "role": "user",
+                "content": COMMUNICATION_USER_TEMPLATE.format(
+                    text=text,
+                    current_profile=current_profile,
+                ),
+            }
+        ]
+
+        try:
+            result = await self.llm.generate_structured(
+                system_prompt=COMMUNICATION_SYSTEM,
+                messages=messages,
+                output_schema=dict,
+                temperature=0.2,
+            )
+        except Exception as e:
+            print(f"Communication extraction failed: {e}")
+            result = {}
+
+        return {
+            "vocabulary_profile": self._merge_vocabulary_profile(
+                current_vocabulary,
+                result.get("vocabulary_profile", {}),
+            ),
+            "syntax_preferences": self._merge_list(
+                current_syntax,
+                result.get("syntax_preferences", []),
+            ),
+            "key_taboos": self._merge_list(
+                current_taboos,
+                result.get("key_taboos", []),
+            ),
+        }
+
+    def _merge_vocabulary_profile(self, existing: dict, new: dict) -> dict:
+        current = existing or {}
+        return {
+            "preferred": self._merge_list(
+                current.get("preferred", []),
+                new.get("preferred", []),
+            ),
+            "avoided": self._merge_list(
+                current.get("avoided", []),
+                new.get("avoided", []),
+            ),
+        }
+
+    def _merge_list(self, existing: list[str], new: list[str]) -> list[str]:
+        merged: list[str] = []
+        seen: set[str] = set()
+        for item in [*(existing or []), *(new or [])]:
+            normalized = str(item).strip()
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            merged.append(normalized)
+        return merged
+
     # ── Full Build ──
 
     async def build(self, text: str, current_profile: dict) -> dict:
-        """Run full StateBuilder pipeline: cognitive errors + PPPPPI + BDI."""
+        """Run the full StateBuilder pipeline for a single user message."""
         current_slots = current_profile.get("pppppi_slots", {})
         current_bdi = current_profile.get("bdi_model", {})
+        current_vocabulary = current_profile.get("vocabulary_profile", {})
+        current_syntax = current_profile.get("syntax_preferences", [])
+        current_taboos = current_profile.get("key_taboos", [])
 
-        # Run extractions in parallel
-        cognitive_errors = await self.extract_cognitive_errors(text)
-        updated_slots = await self.map_to_pppppi(text, current_slots)
-        updated_bdi = await self.update_bdi(text, current_bdi)
+        cognitive_errors, updated_slots, updated_bdi, communication = await asyncio.gather(
+            self.extract_cognitive_errors(text),
+            self.map_to_pppppi(text, current_slots),
+            self.update_bdi(text, current_bdi),
+            self.update_communication(
+                text,
+                current_vocabulary,
+                current_syntax,
+                current_taboos,
+            ),
+        )
 
         return {
             "cognitive_errors": cognitive_errors,
             "pppppi_slots": updated_slots,
             "bdi_model": updated_bdi,
+            "vocabulary_profile": communication["vocabulary_profile"],
+            "syntax_preferences": communication["syntax_preferences"],
+            "key_taboos": communication["key_taboos"],
         }
 
 

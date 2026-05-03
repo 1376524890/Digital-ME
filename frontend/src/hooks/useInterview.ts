@@ -12,17 +12,17 @@ interface Message {
 
 interface InterviewState {
   sessionId: string | null;
+  status: "active" | "completed" | null;
   greeting: string | null;
   messages: Message[];
   isStarting: boolean;
   error: string | null;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-
 export function useInterview() {
   const [state, setState] = useState<InterviewState>({
     sessionId: null,
+    status: null,
     greeting: null,
     messages: [],
     isStarting: false,
@@ -36,6 +36,7 @@ export function useInterview() {
       const result = await api.startInterview(userId, context);
       setState({
         sessionId: result.session_id,
+        status: "active",
         greeting: result.greeting,
         messages: [],
         isStarting: false,
@@ -55,21 +56,18 @@ export function useInterview() {
   const resumeInterview = useCallback(async (sessionId: string) => {
     setState((s) => ({ ...s, isStarting: true, error: null }));
     try {
-      const res = await fetch(`${API_BASE}/interview/${sessionId}/state`);
-      if (!res.ok) throw new Error("会话不存在");
-      const data = await res.json();
+      const data = await api.getInterviewState(sessionId);
 
       // Map backend messages to frontend Message format
-      const history: Message[] = (data.messages || []).map(
-        (m: { id: string; role: string; content: string }) => ({
+      const history: Message[] = (data.messages || []).map((m) => ({
           id: m.id,
-          role: m.role as "user" | "assistant",
+          role: m.role,
           content: m.content,
-        })
-      );
+        }));
 
       setState({
         sessionId: data.session_id,
+        status: data.status,
         greeting: data.greeting, // null if session already has messages
         messages: history,
         isStarting: false,
@@ -91,5 +89,10 @@ export function useInterview() {
     await api.endInterview(state.sessionId);
   }, [state.sessionId]);
 
-  return { ...state, startInterview, resumeInterview, endInterview };
+  const abandonInterview = useCallback(async () => {
+    if (!state.sessionId) return;
+    await api.abandonInterview(state.sessionId);
+  }, [state.sessionId]);
+
+  return { ...state, startInterview, resumeInterview, endInterview, abandonInterview };
 }

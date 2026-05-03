@@ -19,7 +19,7 @@ export default function MessageBubble({ role, content, isStreaming }: Props) {
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+        className={`max-w-[92%] sm:max-w-[80%] px-4 py-3 rounded-2xl ${
           isUser
             ? "bg-black text-white rounded-br-md"
             : "bg-[var(--color-surface)] border border-[var(--color-border)] rounded-bl-md shadow-sm"

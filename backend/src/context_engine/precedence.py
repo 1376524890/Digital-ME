@@ -27,7 +27,7 @@ class PrecedenceResolver:
             ts = item.get("timestamp", "2000-01-01")
             scored.append((priority, ts, item))
 
-        scored.sort(key=lambda x: (x[0], x[1], reverse=True))
+        scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
 
         # If top two conflict significantly, mark for clarification
         if len(scored) >= 2:

@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
+from typing import TypeVar
+
+T = TypeVar("T")
 
 
 class BaseLLM(ABC):
@@ -22,7 +25,7 @@ class BaseLLM(ABC):
     ) -> AsyncIterator[str]: ...
 
     @abstractmethod
-    async def generate_structured[T](
+    async def generate_structured(
         self,
         system_prompt: str,
         messages: list[dict],

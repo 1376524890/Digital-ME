@@ -72,7 +72,7 @@ function FlowingDigits() {
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8 relative">
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 sm:p-8 relative">
       <FlowingDigits />
 
       <div className="max-w-2xl text-center space-y-8 relative" style={{ zIndex: 1 }}>
@@ -82,10 +82,10 @@ export default function HomePage() {
             <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
             Digital Twin Distillation
           </div>
-          <h1 className="text-6xl font-bold tracking-tight">
+          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
             数字<span className="text-[var(--color-text-muted)]">人格</span>
           </h1>
-          <p className="text-lg text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-[var(--color-text-muted)] max-w-md mx-auto leading-relaxed">
             通过反思性 AI 对话，将你的个性蒸馏为数字孪生
             <br />
             像你一样思考、表达和回应
@@ -110,7 +110,7 @@ export default function HomePage() {
 
         {/* Feature cards */}
         <div
-          className="grid grid-cols-3 gap-4 mt-16 text-left animate-fade-in-up"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-12 sm:mt-16 text-left animate-fade-in-up"
           style={{ animationDelay: "0.4s" }}
         >
           {[

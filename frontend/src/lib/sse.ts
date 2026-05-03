@@ -5,6 +5,15 @@ export interface SSEEvent {
   content?: string;
   ply_id?: string;
   sequence_num?: number;
+  coverage?: {
+    presenting: number;
+    predisposing: number;
+    precipitating: number;
+    perpetuating: number;
+    protective: number;
+    impact: number;
+    overall: number;
+  };
 }
 
 export async function* streamChat(

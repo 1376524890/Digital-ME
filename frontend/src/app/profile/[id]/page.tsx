@@ -26,12 +26,22 @@ const TRAIT_LABELS: Record<string, string> = {
   n: "神经质",
 };
 
+const DIMENSION_KEYS = [
+  "presenting",
+  "predisposing",
+  "precipitating",
+  "perpetuating",
+  "protective",
+  "impact",
+] as const;
+
 export default function ProfilePage() {
   const params = useParams();
   const sessionId = params.id as string;
   const [profile, setProfile] = useState<ProfileSnapshot | null>(null);
   const [coverage, setCoverage] = useState<DimensionCoverage | null>(null);
   const [skillMd, setSkillMd] = useState<string | null>(null);
+  const [skillStatus, setSkillStatus] = useState<"pending" | "ready" | "error">("pending");
   const [loading, setLoading] = useState(true);
   const [showSkill, setShowSkill] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -40,11 +50,18 @@ export default function ProfilePage() {
     Promise.all([
       api.getProfile(sessionId).catch(() => null),
       api.getCoverage(sessionId).catch(() => null),
-      api.getSkillMd(sessionId).catch(() => null),
+      api.getSkillMd(sessionId).catch(() => undefined),
     ]).then(([profileData, coverageData, skillData]) => {
       if (profileData) setProfile(profileData);
       if (coverageData) setCoverage(coverageData);
-      if (skillData) setSkillMd(skillData);
+      if (typeof skillData === "string") {
+        setSkillMd(skillData);
+        setSkillStatus("ready");
+      } else if (skillData === null) {
+        setSkillStatus("pending");
+      } else {
+        setSkillStatus("error");
+      }
       setLoading(false);
     });
   }, [sessionId]);
@@ -71,9 +88,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen p-6 max-w-3xl mx-auto space-y-8">
+    <div className="min-h-screen p-4 sm:p-6 max-w-3xl mx-auto space-y-8">
       {/* Header with back button */}
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <Link
           href={`/interview/${sessionId}`}
           className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
@@ -103,19 +120,19 @@ export default function ProfilePage() {
       {coverage && (
         <section className="p-6 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)]">
           <h2 className="text-lg font-semibold mb-5">维度覆盖度</h2>
-          <div className="grid grid-cols-3 gap-4">
-            {Object.entries(coverage).map(([key, value]) => (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {DIMENSION_KEYS.map((key) => (
               <div key={key} className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="font-medium">{DIM_LABELS[key] || key}</span>
+                  <span className="font-medium">{DIM_LABELS[key]}</span>
                   <span className="text-[var(--color-text-muted)] font-mono">
-                    {Math.round(value * 100)}%
+                    {Math.round((coverage[key] ?? 0) * 100)}%
                   </span>
                 </div>
                 <div className="h-1.5 rounded-full bg-[var(--color-bg)]">
                   <div
                     className="h-full rounded-full bg-black transition-all duration-700"
-                    style={{ width: `${value * 100}%` }}
+                    style={{ width: `${(coverage[key] ?? 0) * 100}%` }}
                   />
                 </div>
               </div>
@@ -128,7 +145,7 @@ export default function ProfilePage() {
       {profile?.ocean_scores && Object.keys(profile.ocean_scores).length > 0 && (
         <section className="p-6 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)]">
           <h2 className="text-lg font-semibold mb-5">大五人格 (OCEAN)</h2>
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
             {Object.entries(profile.ocean_scores).map(([trait, value]) => (
               <div key={trait} className="text-center space-y-1.5">
                 <div className="text-2xl font-bold font-mono">
@@ -173,7 +190,7 @@ export default function ProfilePage() {
       )}
 
       {/* SKILL.md */}
-      {skillMd && (
+      {skillMd ? (
         <section className="rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] overflow-hidden">
           <button
             onClick={() => setShowSkill(!showSkill)}
@@ -202,6 +219,15 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+        </section>
+      ) : (
+        <section className="p-6 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] space-y-2">
+          <h2 className="text-lg font-semibold">SKILL.md</h2>
+          <p className="text-sm text-[var(--color-text-muted)]">
+            {skillStatus === "error"
+              ? "SKILL.md 状态读取失败，请稍后刷新重试。"
+              : "SKILL.md 尚未生成。完成访谈后会在这里提供预览与下载。"}
+          </p>
         </section>
       )}
 
