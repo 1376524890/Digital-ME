@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import VoiceRecorder from "@/components/voice/VoiceRecorder";
 
 interface Props {
@@ -10,6 +10,21 @@ interface Props {
 
 export default function MessageInput({ onSend, disabled }: Props) {
   const [text, setText] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus when disabled transitions from true → false (streaming ends)
+  const prevDisabled = useRef(disabled);
+  useEffect(() => {
+    if (prevDisabled.current && !disabled) {
+      inputRef.current?.focus();
+    }
+    prevDisabled.current = disabled;
+  }, [disabled]);
+
+  // Auto-focus on mount
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -30,6 +45,7 @@ export default function MessageInput({ onSend, disabled }: Props) {
       <div className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] focus-within:border-[#b0b0b0] focus-within:ring-4 focus-within:ring-black/5 transition-all shadow-sm">
         <VoiceRecorder onTranscript={handleTranscript} disabled={disabled} />
         <input
+          ref={inputRef}
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}

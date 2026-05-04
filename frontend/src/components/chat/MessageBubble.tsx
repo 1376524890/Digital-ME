@@ -16,6 +16,19 @@ interface Props {
 
 export default function MessageBubble({ role, content, isStreaming }: Props) {
   const isUser = role === "user";
+
+  // Final fallback to strip thinking noise if it leaks through the backend
+  const filteredContent = !isUser
+    ? content
+        .replace(/<think>[\s\S]*?<\/think>/g, "")
+        .replace(/Here's a thinking process:[\s\S]*?\n\n/i, "")
+        .trim()
+    : content;
+
+  if (!isUser && !filteredContent && isStreaming) {
+    return null; // Don't show empty bubble while filtering initial thought
+  }
+
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
@@ -26,16 +39,16 @@ export default function MessageBubble({ role, content, isStreaming }: Props) {
         }`}
       >
         {isUser ? (
-          <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed">{filteredContent}</p>
         ) : (
           <div className="prose prose-sm max-w-none text-sm leading-relaxed">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{filteredContent}</ReactMarkdown>
             {isStreaming && (
               <span className="inline-block w-1.5 h-4 ml-0.5 bg-black animate-pulse align-text-bottom" />
             )}
-            {!isStreaming && content && (
+            {!isStreaming && filteredContent && (
               <div className="mt-2 flex justify-end border-t border-[var(--color-border)] pt-2">
-                <VoicePlayer text={content} />
+                <VoicePlayer text={filteredContent} />
               </div>
             )}
           </div>
