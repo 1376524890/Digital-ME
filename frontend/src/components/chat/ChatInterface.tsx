@@ -156,35 +156,37 @@ export default function ChatInterface({
   );
 
   return (
-    <div className="h-full flex flex-col max-w-3xl mx-auto">
+    <div className="h-full flex flex-col w-full">
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-6 py-4 space-y-4 scroll-smooth"
+        className="flex-1 overflow-y-auto scroll-smooth"
       >
-        {messages.length === 0 && !isStreaming && (
-          <div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-sm">
-            <p>AI 正在准备...</p>
-          </div>
-        )}
-        {streamError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {streamError}
-          </div>
-        )}
-        {messages.map((msg) => (
-          <MessageBubble key={msg.id} role={msg.role} content={msg.content} />
-        ))}
-        {isStreaming && streamingContent && (
-          <MessageBubble
-            role="assistant"
-            content={streamingContent}
-            isStreaming
-          />
-        )}
-        <div ref={messagesEndRef} />
+        <div className="max-w-3xl mx-auto px-6 py-4 space-y-4">
+          {messages.length === 0 && !isStreaming && (
+            <div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-sm py-20">
+              <p>AI 正在准备...</p>
+            </div>
+          )}
+          {streamError && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {streamError}
+            </div>
+          )}
+          {messages.map((msg) => (
+            <MessageBubble key={msg.id} role={msg.role} content={msg.content} />
+          ))}
+          {isStreaming && streamingContent && (
+            <MessageBubble
+              role="assistant"
+              content={streamingContent}
+              isStreaming
+            />
+          )}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
-      <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="max-w-3xl mx-auto">
+      <div className="shrink-0 border-t border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_-1px_3px_rgba(0,0,0,0.02)]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <MessageInput onSend={handleSend} disabled={isStreaming || disabled} />
         </div>
       </div>

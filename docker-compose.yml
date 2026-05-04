@@ -56,14 +56,14 @@ services:
     build:
       context: ./frontend
       network: host
-    command: pnpm dev
+    command: sh -c "pnpm build && pnpm start"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
     ports:
       - "3000:3000"
     volumes:
       - ./frontend/src:/app/src
-      - ./shared:/app/shared
+      - ./shared:/shared
     depends_on:
       - backend
 

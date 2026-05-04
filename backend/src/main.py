@@ -7,11 +7,15 @@ from src.api.router import router as health_router
 from src.api.interview import router as interview_router
 from src.api.profile import router as profile_router
 from src.api.export import router as export_router
+from src.config import settings
+from src.memory_hub.indexer import get_indexer
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: preload embedding model, etc.
+    indexer = get_indexer()
+    await indexer.preload()
     yield
     # Shutdown: cleanup connections
 
@@ -24,7 +28,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

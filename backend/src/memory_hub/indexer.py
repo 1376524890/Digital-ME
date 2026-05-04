@@ -53,6 +53,10 @@ class Indexer:
             self._embedding_available = False
         return self._embedding_available
 
+    async def preload(self):
+        """Preload models for performance."""
+        self._ensure_model()
+
     async def embed_text(self, text: str) -> list[float]:
         """Generate embedding for text. Uses real model if available, else hash fallback."""
         if self._ensure_model():
